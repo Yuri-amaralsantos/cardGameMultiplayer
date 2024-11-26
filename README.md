@@ -4,3 +4,5 @@ fazer compra de cartas
 fazer sistema de batalha(variavel target e target2)
 usar update? requestAnimatioFrame()
 adicionar componente para cartas no react
+sistema de mana e turnos
+precisa ter mana para jogar cartas

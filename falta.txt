@@ -1,0 +1,7 @@
+
+mana
+deathrattle
+on play
+on turn
+whenever effect
+token que permite atacar

@@ -1,0 +1,4 @@
+io.to(socket.id).emit("update-partial", {
+  hand: { player, value: gameData[player].hand },
+  board: { player, value: gameData[player].board }
+});

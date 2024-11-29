@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RPG with Socket.IO</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    .container {
+      display: flex;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    .lista {
+      display: flex;
+      width: 900px;
+      min-height: 150px;
+      border: 1px solid black;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hero {
+      width: 130px;
+      height: 50px;
+    }
+
+    #enemy {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: rgb(66, 199, 192);
+    }
+
+    #player {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: rgb(236, 100, 9);
+    }
+
+    .card {
+      width: 110px;
+      height: 140px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .title {
+      width: 110px;
+      height: 30px;
+      border: 1px solid black;
+      display: flex;
+    }
+
+    .title>div {
+      border: 1px solid black;
+    }
+
+    .image {
+      width: 110px;
+      height: 60px;
+      border: 1px solid black;
+    }
+
+    .desc {
+      width: 110px;
+      height: 60px;
+      border: 1px solid black;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #buttonTurn {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      width: 70px;
+      height: 60px;
+      font-size: medium;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="turn">
+    <p>turno</p>
+    <p>mana</p>
+  </div>
+  <button id="buttonTurn" onclick="turn()">Pass Turn</button>
+  <div class="container">
+    <div id="enemy">
+      <button onclick="targetEnemy()" class="hero">waiting...</button>
+      <div class="lista"></div>
+    </div>
+    <div id="player">
+      <div class="lista"></div>
+      <div class="lista"></div>
+      <button class="hero"></button>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+    let playerIndex = null;
+    let enemyIndex = null;
+    let target = null;
+    let data = null;
+    const ui_player = document.getElementById("player");
+    const ui_enemy = document.getElementById("enemy");
+    const ui_turn = document.getElementById("turn");
+
+    function targeting(side, x) {
+      if (data.turn == playerIndex) {
+        if (target === null && side === playerIndex) {
+          target = x;
+        } else if (target !== null && side === enemyIndex) {
+          socket.emit("battle", {
+            p1: playerIndex,
+            id1: target,
+            p2: enemyIndex,
+            id2: x,
+          });
+
+          target = null;
+        }
+      } else {
+        alert("turno do oponente");
+      }
+    }
+
+    function turn() {
+      if (data.turn == playerIndex) {
+        socket.emit("turn");
+      } else {
+        alert("turno do oponente");
+      }
+    }
+
+    function play(x) {
+      if (data.turn == playerIndex) {
+        
+        if(data[playerIndex].mana>=data[playerIndex].hand[x].cost){
+          socket.emit("play", playerIndex, x);
+        } else{
+          alert("sem mana suficiente")
+        }
+        
+      } else {
+        alert("turno do oponente");
+      }
+    }
+
+    function targetEnemy() {
+      if (target !== null) {
+        socket.emit("direct-attack", {
+          p1: playerIndex,
+          id1: target,
+          p2: enemyIndex,
+        });
+      } else {
+        alert("escolha uma criatura antes de atacar o herói inimigo");
+      }
+    }
+
+    socket.on("define", (a, b) => {
+      playerIndex = a;
+      enemyIndex = b;
+    });
+
+    socket.on("update-partial", (d) => {
+      if (d.turn) {
+        data.turn = d.turn;
+        ui_turn.children[0].textContent = "Turn: " + data.turn;
+      }
+      if (d.mana) {
+        data[d.mana.role].mana = d.mana.value;
+        if (d.mana.role == playerIndex) {
+          ui_turn.children[1].textContent = "Mana: " + data[playerIndex].mana;
+        }
+      }
+      if (d.hp) {
+        data[d.hp.role].hp = d.hp.value;
+        if (d.hp.role == playerIndex) {
+          ui_player.children[2].textContent = `${data[playerIndex].nome} / hp: ${data[playerIndex].hp}`;
+        } else {
+          ui_enemy.children[0].innerHTML = `${data[enemyIndex].nome} / hp: ${data[enemyIndex].hp}`;
+        }
+      }
+      if (d.hand) {
+        data[d.hand.role].hand = d.hand.value;
+        if (d.hand.role === playerIndex) {
+          ui_player.children[1].innerHTML = ""; // Clear previous hand display
+          d.hand.value.forEach((item, index) => {
+            const button = document.createElement("button");
+            button.classList.add("card");
+            const title = document.createElement("div");
+            title.classList.add("title");
+            title.innerHTML = `<div style="flex-grow:0.2">${item.cost}</div><div style="flex-grow:0.8">${item.nome}</div>`;
+            button.appendChild(title);
+            const image = document.createElement("img");
+            image.classList.add("image");
+            image.src = "test.jpg";
+            button.appendChild(image);
+            const desc = document.createElement("div");
+            desc.classList.add("desc");
+            desc.innerHTML = `<div>texto:</div><div>${item.atk}/${item.hp}</div>`;
+            button.appendChild(desc);
+            button.addEventListener("click", () => play(index));
+            ui_player.children[1].appendChild(button);
+          });
+        }
+      }
+      if (d.board) {
+        data[d.board.role].board = d.board.value;
+        if (d.board.role === playerIndex) {
+          ui_player.children[0].innerHTML = ""; // Clear previous board display
+          d.board.value.forEach((item, index) => {
+            const button = document.createElement("button");
+            button.classList.add("card");
+            const title = document.createElement("div");
+            title.classList.add("title");
+            title.innerHTML = item.nome
+            button.appendChild(title)
+            const image = document.createElement("img");
+            image.classList.add("image");
+            image.src = "test.jpg"
+            button.appendChild(image)
+            const desc = document.createElement("div");
+            desc.classList.add("desc");
+            desc.innerHTML = `<div>texto:</div><div>${item.atk}/${item.hp}</div>`
+            button.appendChild(desc)
+            button.addEventListener("click", () =>
+              targeting(playerIndex, index)
+            ); // Attach targeting function to button
+            ui_player.children[0].appendChild(button);
+          });
+        } else if (d.board.role === enemyIndex) {
+          ui_enemy.children[1].innerHTML = ""; // Clear previous enemy board display
+          d.board.value.forEach((item, index) => {
+            const button = document.createElement("button");
+            button.classList.add("card");
+            const title = document.createElement("div");
+            title.classList.add("title");
+            title.innerHTML = item.nome
+            button.appendChild(title)
+            const image = document.createElement("img");
+            image.classList.add("image");
+            image.src = "test.jpg"
+            button.appendChild(image)
+            const desc = document.createElement("div");
+            desc.classList.add("desc");
+            desc.innerHTML = `<div>texto:</div><div>${item.atk}/${item.hp}</div>`
+            button.appendChild(desc)
+            button.addEventListener("click", () =>
+              targeting(enemyIndex, index)
+            ); // Attach targeting function to button
+            ui_enemy.children[1].appendChild(button);
+          });
+        }
+      }
+    });
+
+    socket.on("update-all", (d) => {
+      data = d;
+
+      ui_turn.children[0].textContent = "Turn: " + data.turn;
+      ui_turn.children[1].textContent = "Mana: " + data[playerIndex].mana;
+      ui_player.children[2].textContent = `${data[playerIndex].nome} / hp: ${data[playerIndex].hp}`;
+      if (data[enemyIndex]) {
+        ui_enemy.children[0].innerHTML = `${data[enemyIndex].nome} / hp: ${data[enemyIndex].hp}`;
+      }
+
+
+    });
+  </script>
+</body>
+
+</html>

@@ -2,3 +2,45 @@ io.to(socket.id).emit("update-partial", {
   hand: { player, value: gameData[player].hand },
   board: { player, value: gameData[player].board }
 });
+
+ button.classList.add("card");
+            const title = document.createElement("div");
+            title.classList.add("title");
+            title.innerHTML = `<div style="flex-grow:0.2">${item.cost}</div><div style="flex-grow:0.8">${item.nome}</div>`;
+            button.appendChild(title);
+            const image = document.createElement("img");
+            image.classList.add("image");
+            image.src = "test.jpg";
+            button.appendChild(image);
+            const desc = document.createElement("div");
+            desc.classList.add("desc");
+            desc.innerHTML = `<div>texto:</div><div>${item.atk}/${item.hp}</div>`;
+            button.appendChild(desc);
+            button.addEventListener("click", () => play(index));
+
+  .card {
+      width: 110px;
+      height: 140px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+      <div class="card-imageB">
+
+      .cardBoard img{
+  width: 70px;
+  height: 70px;
+}
+
+.card-footerB{
+
+top:60px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+
+display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;

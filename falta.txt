@@ -1,7 +1,8 @@
 
-mana
 deathrattle
 on play
 on turn
-whenever effect
-token que permite atacar
+whenever effect +-
+embaralhar deck
+aumentar a carta quando coloca o mouse em cima
+alertar quando a carta tem token com um amarelo ao redor

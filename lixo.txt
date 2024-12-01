@@ -44,3 +44,6 @@ display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  io.emit("update-partial",{
+      card:{role:"playerHand", index:1 ,value: gameData.p1.hand[1]}
+    })

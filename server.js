@@ -72,6 +72,8 @@ io.on("connection", (socket) => {
   }
 
   socket.on("turn", () => {
+    
+    
     if (gameData.turn == "p1") {
       gameData.turn = "p2"
     } else {
@@ -93,7 +95,7 @@ io.on("connection", (socket) => {
     });
     io.emit("update-partial", {
       board: { role: gameData.turn, value: gameData[gameData.turn].board }
-    });
+    }); 
 
 
   })
@@ -103,18 +105,29 @@ io.on("connection", (socket) => {
     gameData[d.p2].board[d.id2].hp -= gameData[d.p1].board[d.id1].atk
     if (gameData[d.p1].board[d.id1].hp < 1) {
       gameData[d.p1].board.splice(d.id1, 1)
+      io.emit("update-partial", {
+        board: { role: d.p1, value: gameData[d.p1].board }
+      }); 
+    }else{
+      gameData[d.p1].board[d.id1].token=0
+      io.emit("update-partial", {
+        card:{ type:"board", role:d.p1, index:d.id1 ,value: gameData[d.p1].board[d.id1]}
+      });
     }
     if (gameData[d.p2].board[d.id2].hp < 1) {
       gameData[d.p2].board.splice(d.id2, 1)
+      io.emit("update-partial", {
+        board: { role: d.p2, value: gameData[d.p2].board }
+      }); 
+    } else{
+      io.emit("update-partial", {
+        card:{ type:"board", role:d.p2, index:d.id2 ,value: gameData[d.p2].board[d.id2]}
+      });
     }
-    gameData[d.p1].board[d.id1].token=0
+    
 
-    io.emit("update-partial", {
-      board: { role: d.p1, value: gameData[d.p1].board }
-    });
-    io.emit("update-partial", {
-      board: { role: d.p2, value: gameData[d.p2].board }
-    });
+  
+    
   });
   socket.on("direct-attack", (d) => {
 
@@ -126,7 +139,7 @@ io.on("connection", (socket) => {
     gameData[d.p1].board[d.id1].token=0
 
     io.emit("update-partial", {
-      board: { role: d.p1, value: gameData[d.p1].board }
+      card:{ type:"board", role:d.p1, index:d.id1 ,value: gameData[d.p1].board[d.id1]}
     });
     io.emit("update-partial", {
       hp: { role: d.p2, value: gameData[d.p2].hp }
@@ -139,15 +152,13 @@ io.on("connection", (socket) => {
     gameData[player].board.push(gameData[player].hand[index])
     gameData[player].hand.splice(index, 1)
 
-    // Emit the partial update to the specific player
     io.emit("update-partial", {
       hand: { role: player, value: gameData[player].hand },
       board: { role: player, value: gameData[player].board },
       mana: { role: player, value: gameData[player].mana }
     });
 
-    // Optionally, you can emit the updated game data to all players
-    //io.emit("update-all", gameData);
+    
   });
 
 
@@ -166,6 +177,6 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(3000, () => {
-  console.log("Server is running on http://localhost:3000");
+server.listen(3000, "0.0.0.0", () => {
+  console.log("Server is running on http://<your_public_ip>:3000");
 });
